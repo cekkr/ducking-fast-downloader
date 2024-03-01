@@ -61,7 +61,13 @@ class FileSender {
 
     async requestChucks(chucks) {
         if (chucks.length == 0) {
-            this.createChucksBase()
+            if (this.EOF) {
+                delete this.session.server.sessions[this.session.num]
+                console.log("End of session ", this.session.num)
+            }
+            else {
+                this.createChucksBase()
+            }
         }
         else {
             for (let n of chucks) {

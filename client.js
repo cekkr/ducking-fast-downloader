@@ -169,6 +169,7 @@ export class Client {
 
     goOn() {
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: 0, data: Buffer.alloc(0) })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKS, data })
         this.send(data)
     }
 
