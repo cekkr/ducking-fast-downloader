@@ -2,7 +2,7 @@ import dgram from 'dgram';
 import fs from 'fs';
 import path from 'path';
 
-import * as Settings from './settings';
+import * as Settings from './settings.js';
 import * as DataStructure from './dataStructure.js'
 
 const PORT = Settings.Settings.defaultPort;
@@ -47,6 +47,7 @@ export class Client {
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
+            console.log("received msg")
             this.addPacketsTime(data.length)
 
             let msg = null
@@ -56,17 +57,18 @@ export class Client {
                     let msgSession = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, msg.data)
                     this.sessionNum = msgSession.session
 
+                    console.log("Session number: ", this.sessionNum)
+
                     this.waitSessionStarted()
                     this.waitSessionStarted = null
 
-                    this.requestFile()
                     break;
 
                 case DataStructure.CLIENT_STATUS.WAIT_CHUNKS:
                     msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, data)
 
                     if (msg.chunkNum == Settings.MAX_VERIFIED_CHUCKS) {
-                        let msgInfo = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, msg.data)
+                        let msgInfo = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, msg.chunk)
 
                         switch (msgInfo.info) {
                             case DataStructure.RESPONSE_INFO.CHUCKSBASE_SIZE:
@@ -190,9 +192,9 @@ export class Client {
     }
 
     send(msg) {
-        msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session, data: msg })
+        msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: this.sessionNum, data: msg })
 
-        this.client.send(msg, this.address, HOST, (error) => {
+        this.client.send(msg, PORT, this.address, (error) => {
             if (error) {
                 console.error('Error sending request:', error);
                 this.client.close();
@@ -217,8 +219,8 @@ export class Client {
         ////
         ////
 
-        this.writeStream = fs.createWriteStream(path.basename(file), {
-            flags: 'r+', // Open file for reading and writing. The file is created if not existing.
+        this.writeStream = fs.createWriteStream(process.cwd() + '/' + path.basename(file), {
+            flags: 'w+', // Open file for reading and writing. The file is created if not existing.
             start: (chuckOffset * Settings.CHUNK_SIZE),
         });
 

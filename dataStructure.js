@@ -47,7 +47,7 @@ export function readSchema(schema, data) {
                 let val = 0
                 switch (bytes) {
                     case 1:
-                        val = data.readUInt8LE(0, bytes);
+                        val = data.readUInt8(0, bytes);
                         break;
                     case 2:
                         val = data.readUInt16LE(0, bytes);
@@ -94,7 +94,7 @@ export function writeSchema(schema, obj) {
                 buffer = Buffer.alloc(bytes);
                 switch (bytes) {
                     case 1:
-                        buffer.writeUInt8LE(val, 0);
+                        buffer.writeUInt8(val, 0);
                         break;
                     case 2:
                         buffer.writeUInt16LE(val, 0);

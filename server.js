@@ -3,7 +3,7 @@ import fs from 'fs';
 import { pipeline } from 'stream';
 import { createReadStream } from 'fs';
 
-import * as Settings from './settings';
+import * as Settings from './settings.js';
 import * as DataStructure from './dataStructure.js'
 
 const PORT = Settings.Settings.defaultPort;
@@ -15,7 +15,7 @@ class FileSender {
         this.session = session
 
         // Start read stream
-        let filePath = session.server.basePath + session.reqPath
+        let filePath = session.server.basePath + '/' + session.reqPath
         let readStream = this.readStream = createReadStream(filePath, { highWaterMark: Settings.CHUNK_SIZE, start: (session.offset * Settings.CHUNK_SIZE) });
 
         this.chunkNum = 0
@@ -23,7 +23,7 @@ class FileSender {
         this.statusSent = false
         this.EOF = false
 
-        readStream.on('readable', readStreamChunk);
+        readStream.on('readable', () => { this.processChunk(); });
 
         readStream.on('end', () => {
             this.EOF = true
@@ -65,7 +65,7 @@ class FileSender {
     async chucksBaseReady() {
         // Inform about chucks base size
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
-        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: Settings.CHUCKSBASE_SIZE, chunk: data })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: Settings.CHUCKSBASE_SIZE, data })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
         await this.session.server.send(this.session, data)
 
@@ -83,20 +83,17 @@ class FileSender {
         }
     }
 
-    readStreamChunk() {
-        this.processChunk();
-    }
-
     // call it to resume the stream
     processChunk() {
         let chunk;
-        while (null === (chunk = readStream.read())) {
-            // loop
+        if (null === (chunk = this.readStream.read())) {
+            return
         }
 
         console.log('Read a chunk of size:', chunk.length);
 
-        this.chucksBase[this.chunkNum] = chunk
+        this.chucksBase[this.chucksBaseNum] = chunk
+        this.chucksBaseNum++
         this.chunkNum++
 
         if (this.chunkNum >= Settings.VERIFIED_CHUCKS) {
@@ -147,11 +144,12 @@ export class Server {
 
                 let infoSession = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, { session: s })
                 let info = { info: DataStructure.RESPONSE_INFO.SET_SESSION, data: infoSession }
+                info = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, info)
 
                 this.send(session, info)
             }
             else {
-                let session = this.sessions[s]
+                let session = this.sessions[msg.session]
 
                 if (!session) {
                     console.error("Not existing session:", s)
@@ -160,12 +158,12 @@ export class Server {
 
                 switch (session.status) {
                     case DataStructure.SESSION_STATUS.WAIT_FOR_REQUEST:
-                        let msg = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST, data)
+                        msg = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST, msg.data)
 
                         switch (msg.type) {
                             case DataStructure.REQUEST_TYPE.REQUEST_FILE:
                                 let reqFile = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_FILE, msg.data)
-                                session.offset = reqFile.chunkOffset
+                                session.offset = reqFile.chuckOffset
                                 session.reqPath = reqFile.path
                                 session.fileSender = new FileSender(session)
                                 break;
@@ -178,7 +176,7 @@ export class Server {
         });
 
         this.server.on('listening', () => {
-            const address = server.address();
+            const address = this.server.address();
             console.log(`Server listening on ${address.address}:${address.port}`);
         });
 
@@ -187,7 +185,7 @@ export class Server {
 
     newSession() {
         for (let s = 1; s < 256; s++) {
-            if (!this.session[s])
+            if (!this.sessions[s])
                 return s
         }
     }

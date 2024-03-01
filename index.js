@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Server } from './server.js'
 import { Client } from './client.js'
 
@@ -19,7 +21,11 @@ if (first == 'server') {
     let server = new Server(dir)
 }
 else {
-    // client...
-    let client = new Client(args[0])
-    client.requestFile(args[1])
+    async function main() {
+        let client = new Client(args[0])
+        await client.startSession()
+        client.requestFile(args[1])
+    }
+
+    main()
 }
