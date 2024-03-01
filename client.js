@@ -19,6 +19,26 @@ export class Client {
         this.sessionNum = 0
 
         this.initUdp()
+
+        // time
+        this.packetsTime = {}
+        this.avgReceivedPackets = 0
+        this.avgChuckSize = 0
+    }
+
+    addPacketsTime(size) {
+        let now = Math.floor((new Date()).getTime / 1000)
+        if (!this.packetsTime[now]) {
+            let prev = this.packetsTime[now - 1]
+            if (prev) {
+                this.avgReceivedPackets = (this.avgReceivedPackets + prev) / 2
+                delete this.packetsTime[now - 1]
+            }
+
+            this.packetsTime[now] = 0
+        }
+
+        this.packetsTime[now] += size
     }
 
     initUdp() {
@@ -26,6 +46,8 @@ export class Client {
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
+            this.addPacketsTime(data.length)
+
             let msg = null
             switch (this.status) {
                 case DataStructure.CLIENT_STATUS.WAIT_SESSION:
@@ -46,10 +68,35 @@ export class Client {
                         // ChucksBase size
                         let msgSize = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, msg.data)
                         this.chucksBaseSize = msgSize.chucksBaseSize
+
+                        if (this.chucksBaseCount > 0) {
+                            this.checkChucksBase()
+                        }
                     }
                     else {
                         this.chucksBase[msg.chunkNum] = msg.data
                         this.chucksBaseCount++
+
+                        this.lastChuckTime = new Date().getTime()
+                        this.avgChuckSize = (this.avgChuckSize + data.length) / 2
+
+                        if (this.chucksBaseSize >= 0) {
+                            if (this.checkChucksSizeTimeout) {
+                                clearTimeout(this.checkChucksSizeTimeout)
+                                this.checkChucksSizeTimeout = null
+                            }
+
+                            let diffTime = this.lastChuckTime - this.firstChuckTime
+                            let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
+                            let forecastChucks = (diffTime / 1000) * chucksPerSecond
+
+                            if ((forecastChucks * 2) > this.chucksBaseSize) {
+                                this.checkChucksBase()
+                            }
+                        }
+                        else {
+                            this.checkChucksSize()
+                        }
                     }
 
                     break;
@@ -57,10 +104,54 @@ export class Client {
         });
     }
 
+    checkChucksSize() {
+        if (this.checkChucksSizeTimeout || this.chucksBaseSize == this.chucksBaseCount)
+            return;
+
+        this.checkChucksSizeTimeout = setTimeout(() => {
+            let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_TYPE, data: Buffer.alloc(0) })
+            this.send(data)
+        }, 250)
+    }
+
     createChucksBase() {
         this.chucksBase = {}
         this.chucksBaseCount = 0
         this.chucksBaseSize = -1
+
+        this.firstChuckTime = new Date().getTime()
+    }
+
+    checkChucksBase() {
+        let chucksToRequest = []
+
+        const FLUSH_AT = 512
+        const flush = () => {
+            let buffers = []
+            for (let chuck of chucksToRequest) {
+                let buffer = Buffer.alloc(2)
+                buffer.writeUInt16LE(chuck, 0);
+                buffers.push(buffer)
+            }
+
+            let data = Buffer.concat(buffers)
+            data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: buffers.length, data: data })
+            this.send(data)
+
+            chucksToRequest = []
+        }
+
+        for (let c = 0; c < this.chucksBaseSize; c++) {
+            if (!this.chucksBase[c]) {
+                chucksToRequest.push(c)
+
+                if (chucksToRequest.length >= FLUSH_AT)
+                    flush()
+            }
+        }
+
+        if (chucksToRequest.length > 0)
+            flush()
     }
 
     close() {

@@ -3,6 +3,7 @@ export const SCHEMA = ['session:UInt:8', 'data:Data']
 
 export const SCHEMA_REQUEST = ['type:UInt:8', 'data:Data']
 export const SCHEMA_REQUEST_FILE = ['chuckOffset:UInt:32', 'path:String']
+export const SCHEMA_REQUEST_CHUCKS = ['numChucks:UInt:16', 'data:Data']
 
 export const SCHEMA_RESPONSE_INFO = ['info:UInt:16', 'data:Data']
 export const SCHEMA_RESPONSE_INFO_SESSION = ['session:UInt:8']
@@ -16,7 +17,8 @@ export const RESPONSE_INFO = {
 }
 
 export const REQUEST_TYPE = {
-    REQUEST_FILE: 1
+    REQUEST_FILE: 1,
+    REQUEST_CHUCKSBASE_TYPE: 2
 }
 
 export const CLIENT_STATUS = {
