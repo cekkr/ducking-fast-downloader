@@ -82,12 +82,16 @@ export class Client {
                                 break;
 
                             case DataStructure.RESPONSE_INFO.END_OF_FILE:
-                                this.writeStream.end()
+
+                                setTimeout(() => {
+                                    this.writeStream.end()
+                                }, 500)
+
                                 break;
                         }
                     }
                     else {
-                        this.chucksBase[msg.chunkNum] = msg.data
+                        this.chucksBase[msg.chunkNum] = msg.chunk
                         this.chucksBaseCount++
 
                         this.lastChuckTime = new Date().getTime()
@@ -144,7 +148,8 @@ export class Client {
     }
 
     flushChucksBase() {
-        for (let chuck of this.chucksBase) {
+        for (let c in this.chucksBase) {
+            let chuck = this.chucksBase[c]
             this.writeStream.write(chuck, (error) => {
                 if (error) {
                     console.error('Error writing data to the file:', error);

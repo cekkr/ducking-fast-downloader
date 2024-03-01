@@ -65,7 +65,7 @@ class FileSender {
     async chucksBaseReady() {
         // Inform about chucks base size
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
-        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: Settings.CHUCKSBASE_SIZE, data })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: DataStructure.RESPONSE_INFO.CHUCKSBASE_SIZE, data })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
         await this.session.server.send(this.session, data)
 

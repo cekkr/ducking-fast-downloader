@@ -7,7 +7,7 @@ export const SCHEMA_REQUEST_CHUCKS = ['numChucks:UInt:16', 'data:Data']
 
 export const SCHEMA_RESPONSE_INFO = ['info:UInt:16', 'data:Data']
 export const SCHEMA_RESPONSE_INFO_SESSION = ['session:UInt:8']
-export const SCHEMA_RESPONSE_INFO_CHUCKSBASE = ['chucksBaseSize:UInt16']
+export const SCHEMA_RESPONSE_INFO_CHUCKSBASE = ['chucksBaseSize:UInt:16']
 
 export const SCHEMA_RESPONSE_CHUNK = ['chunkNum:UInt:16', 'chunk:Data']
 
