@@ -18,11 +18,24 @@ class FileSender {
 
 export class Server {
     constructor() {
+        this.sessions = {}
+        this.addressSession = {}
+
+        this.initUdp()
+    }
+
+    initUdp() {
         this.server = dgram.createSocket('udp4');
 
         this.server.on('message', (msg, rinfo) => {
-            console.log(`Received request for file: ${msg} from ${rinfo.address}:${rinfo.port}`);
-            const filePath = msg.toString();
+            let session = msg.readUIntLE(0, 1);
+
+            if (session == 0) {
+                let path = msg.slice(1).toString('utf-8')
+                console.log(`Received request for file: ${path} from ${rinfo.address}:${rinfo.port}`);
+            }
+
+
         });
 
         this.server.on('listening', () => {

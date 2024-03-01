@@ -44,4 +44,10 @@ export class Client {
             }
         });
     }
+
+    requestFile(file) {
+        const bufferOp = Buffer.alloc(1);
+        bufferOp.writeUInt8LE(0, 0);
+        const msg = Buffer.concat([bufferOp, Buffer.from(file, 'utf-8')]);
+    }
 }
