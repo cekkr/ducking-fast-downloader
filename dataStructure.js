@@ -6,9 +6,13 @@ export const SCHEMA_REQUEST_FILE = ['chuckOffset:UInt:32', 'path:String']
 
 export const SCHEMA_RESPONSE_INFO = ['info:UInt:16', 'data:Data']
 export const SCHEMA_RESPONSE_INFO_SESSION = ['session:UInt:8']
+export const SCHEMA_RESPONSE_INFO_CHUCKSBASE = ['chucksBaseSize:UInt16']
+
+export const SCHEMA_RESPONSE_CHUNK = ['chunkNum:UInt:16', 'chunk:Data']
 
 export const RESPONSE_INFO = {
-    SET_SESSION: 1
+    SET_SESSION: 1,
+    CHUCKSBASE_SIZE: 2
 }
 
 export const REQUEST_TYPE = {

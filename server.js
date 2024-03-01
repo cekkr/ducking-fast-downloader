@@ -17,9 +17,6 @@ class FileSender {
     constructor(session) {
         this.session = session
 
-        // Begin to create the chuck base
-        this.createChucksBase()
-
         // Start read stream
         let filePath = session.server.basePath + session.reqPath
         let readStream = this.readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE, start: (session.offset * CHUNK_SIZE) });
@@ -45,7 +42,8 @@ class FileSender {
             console.error('An error occurred:', error.message);
         });
 
-        //this.sendInfo(Status.CHUCK_OFFSET)        
+        // Begin to create the chuck base
+        this.createChucksBase()
     }
 
     sendInfo(info, data = null) {
@@ -53,7 +51,6 @@ class FileSender {
             data = Buffer.alloc(0)
 
         info = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info, data })
-
         this.session.server.send(this.session, info)
     }
 
@@ -69,7 +66,14 @@ class FileSender {
     }
 
     async chucksBaseReady() {
+        // Inform about chucks base size
+        let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
+        await this.session.server.send(this.session, data)
 
+        for (let n = 0; n < this.chucksBaseNum; n++) {
+            data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chunkNum: n, chunk: this.chucksBase[n] })
+            await this.session.server.send(this.session, data)
+        }
     }
 
     readStreamChunk() {
