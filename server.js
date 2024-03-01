@@ -3,7 +3,7 @@ import fs from 'fs';
 import { pipeline } from 'stream';
 import { createReadStream } from 'fs';
 
-import Settings from './settings';
+import { Settings, Status } from './settings';
 
 const PORT = Settings.defaultPort;
 const HOST = '0.0.0.0';
@@ -11,10 +11,6 @@ const HOST = '0.0.0.0';
 const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
 const VERIFIED_CHUCKS = Math.pow(10, 2) // 1024
-
-const STATUS_OK = 1
-const STATUS_ERR = 2
-const STATUS_CHUCK_OFFSET = 2
 
 class FileSender {
     constructor(session) {
@@ -36,11 +32,11 @@ class FileSender {
         });
 
         readStream.on('error', (error) => {
-            this.sendInfo(STATUS_ERR)
+            this.sendInfo(Status.ERR)
             console.error('An error occurred:', error.message);
         });
 
-        this.sendInfo(STATUS_CHUCK_OFFSET)
+        this.sendInfo(Status.CHUCK_OFFSET)
     }
 
     sendInfo(info) {
@@ -71,7 +67,7 @@ class FileSender {
         }
 
         if (!this.statusSent) {
-            this.sendInfo(STATUS_OK)
+            this.sendInfo(Status.OK)
             this.statusSent = true
         }
 
@@ -106,7 +102,7 @@ export class Server {
         this.server = dgram.createSocket('udp4');
 
         this.server.on('message', (msg, rinfo) => {
-            let session = msg.readUIntLE(0, 1);
+            let session = msg.readUInt8LE(0, 1);
 
             if (session == 0) {
                 let path = msg.slice(1).toString('utf-8')
