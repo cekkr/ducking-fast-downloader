@@ -114,8 +114,7 @@ export class Server {
                 let session = this.sessions[s] = { num: s }
                 session.server = this
                 session.rinfo = rinfo
-                //session.reqPath = path
-                //session.fileSender = new FileSender(session)
+                session.status = DataStructure.SESSION_STATUS.WAIT_FOR_REQUEST
 
                 let infoSession = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, { session: s })
                 let info = { info: DataStructure.RESPONSE_INFO.SET_SESSION, data: infoSession }
@@ -124,6 +123,27 @@ export class Server {
             }
             else {
                 let session = this.sessions[s]
+
+                if (!session) {
+                    console.error("Not existing session:", s)
+                    return;
+                }
+
+                switch (session.status) {
+                    case DataStructure.SESSION_STATUS.WAIT_FOR_REQUEST:
+                        let msg = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST, data)
+
+                        switch (msg.type) {
+                            case DataStructure.REQUEST_TYPE.REQUEST_FILE:
+                                let reqFile = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_FILE, msg.data)
+                                session.offset = reqFile.chunkOffset
+                                session.reqPath = reqFile.path
+                                session.fileSender = new FileSender(session)
+                                break;
+                        }
+
+                        break;
+                }
             }
 
         });

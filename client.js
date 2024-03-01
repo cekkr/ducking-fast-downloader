@@ -65,7 +65,7 @@ export class Client {
         })
     }
 
-    requestFile(file, offset = 0) {
+    requestFile(file, chuckOffset = 0) {
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_FILE, { chuckOffset, path: file })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_FILE, data })
         this.send(data)

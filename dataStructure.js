@@ -20,6 +20,10 @@ export const CLIENT_STATUS = {
     WAIT_CHUNKSBASE_INFO: 1
 }
 
+export const SESSION_STATUS = {
+    WAIT_FOR_REQUEST: 0
+}
+
 export function readSchema(schema, data) {
     let obj = {}
 
