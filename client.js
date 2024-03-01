@@ -83,9 +83,14 @@ export class Client {
 
                             case DataStructure.RESPONSE_INFO.END_OF_FILE:
 
-                                setTimeout(() => {
-                                    this.writeStream.end()
-                                }, 500)
+                                this.EOF = true
+
+                                setInterval(() => {
+                                    if (this.chucksBaseSize == this.chucksBaseCount) {
+                                        this.writeStream.end()
+                                        process.exit(0)
+                                    }
+                                }, 100)
 
                                 break;
                         }
