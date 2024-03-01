@@ -1,7 +1,8 @@
 import dgram from 'dgram';
 import fs from 'fs';
 
-import { Settings, Status } from './settings';
+import { Settings, Status } from './settings.js';
+import * as DataStructure from './dataStructure.js'
 
 const PORT = Settings.defaultPort;
 const HOST = '127.0.0.1';
@@ -14,6 +15,8 @@ export class Client {
         this.address = address
 
         this.offset = opts.offset || 0
+
+        this.sessionNum = 0
 
         this.initUdp()
     }
@@ -53,6 +56,8 @@ export class Client {
     }
 
     send(msg) {
+        msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session, data: msg })
+
         this.client.send(msg, this.address, HOST, (error) => {
             if (error) {
                 console.error('Error sending request:', error);
@@ -61,6 +66,13 @@ export class Client {
                 //console.log(`Requested file: ${fileName}`);
             }
         });
+    }
+
+    startSession() {
+        return new Promise((res) => {
+            this.waitSessionStarted = res
+            this.send(Buffer.alloc(0)) // send empty message
+        })
     }
 
     requestFile(file) {

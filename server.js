@@ -4,6 +4,7 @@ import { pipeline } from 'stream';
 import { createReadStream } from 'fs';
 
 import { Settings, Status } from './settings';
+import * as DataStructure from './dataStructure.js'
 
 const PORT = Settings.defaultPort;
 const HOST = '0.0.0.0';
@@ -101,19 +102,25 @@ export class Server {
     initUdp() {
         this.server = dgram.createSocket('udp4');
 
-        this.server.on('message', (msg, rinfo) => {
-            let session = msg.readUInt8LE(0, 1);
+        this.server.on('message', (data, rinfo) => {
+            let msg = DataStructure.readSchema(DataStructure.SCHEMA, data)
+
+            let session = msg.session
 
             if (session == 0) {
-                let path = msg.slice(1).toString('utf-8')
-                console.log(`Received request for file: ${path} from ${rinfo.address}:${rinfo.port}`);
+                console.log(`Received new session request from ${rinfo.address}:${rinfo.port}`);
 
                 let s = this.newSession()
-                let session = this.sessions[s] = {}
+                let session = this.sessions[s] = { num: s }
                 session.server = this
                 session.rinfo = rinfo
-                session.reqPath = path
-                session.fileSender = new FileSender(session)
+                //session.reqPath = path
+                //session.fileSender = new FileSender(session)
+
+                let infoSession = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, { session: s })
+                let info = { info: DataStructure.RESPONSE_INFO.SET_SESSION, data: infoSession }
+
+                this.send(session, info)
             }
             else {
                 let session = this.sessions[s]
@@ -137,6 +144,8 @@ export class Server {
     }
 
     send(session, msg) {
+        msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
+
         this.server.send(msg, 0, msg.length, session.rinfo.port, session.rinfo.address, (error) => {
             if (error) {
                 console.error('Error sending packet:', error);

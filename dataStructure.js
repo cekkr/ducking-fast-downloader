@@ -1,7 +1,15 @@
 
 export const SCHEMA = ['session:UInt:8', 'data:Data']
+
 export const SCHEMA_REQUEST = ['type:UInt:8', 'data:Data']
 export const SCHEMA_REQUEST_FILE = ['chuckOffset:UInt:32', 'path:String']
+
+export const SCHEMA_RESPONSE_INFO = ['info:UInt:16', 'data:Data']
+export const SCHEMA_RESPONSE_INFO_SESSION = ['session:UInt:8']
+
+export const RESPONSE_INFO = {
+    SET_SESSION: 1
+}
 
 export function readSchema(schema, data) {
     let obj = {}
