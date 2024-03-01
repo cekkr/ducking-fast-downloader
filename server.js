@@ -73,6 +73,12 @@ class FileSender {
             data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
             await this.session.server.send(this.session, data)
         }
+
+        if (this.EOF) {
+            setTimeout(() => {
+                this.sendInfo(DataStructure.RESPONSE_INFO.END_OF_FILE)
+            }, 500)
+        }
     }
 
     readStreamChunk() {

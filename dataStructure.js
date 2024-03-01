@@ -13,7 +13,8 @@ export const SCHEMA_RESPONSE_CHUNK = ['chunkNum:UInt:16', 'chunk:Data']
 
 export const RESPONSE_INFO = {
     SET_SESSION: 1,
-    CHUCKSBASE_SIZE: 2
+    CHUCKSBASE_SIZE: 2,
+    END_OF_FILE
 }
 
 export const REQUEST_TYPE = {
