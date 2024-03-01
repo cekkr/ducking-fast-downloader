@@ -40,11 +40,13 @@ class FileSender {
         this.sendInfo(Status.CHUCK_OFFSET)
     }
 
-    sendInfo(info) {
-        const bufferInfo = Buffer.alloc(2);
-        bufferInfo.writeUInt16LE(info, 0);
+    sendInfo(info, data = null) {
+        if (!data)
+            data = Buffer.alloc(0)
 
-        this.session.server.send(this.session, bufferInfo)
+        info = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info, data })
+
+        this.session.server.send(this.session, info)
     }
 
     infoResponse(msg) {
