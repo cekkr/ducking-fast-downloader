@@ -139,7 +139,7 @@ export class Client {
             if (this.chucksBaseSize == this.chucksBaseCount)
                 return;
 
-            let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_TYPE, data: Buffer.alloc(0) })
+            let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_SIZE, data: Buffer.alloc(0) })
             this.send(data)
         }, 250)
     }
@@ -186,6 +186,7 @@ export class Client {
 
             let data = Buffer.concat(buffers)
             data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: buffers.length, data: data })
+            data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKS, data: data })
             this.send(data)
 
             chucksToRequest = []

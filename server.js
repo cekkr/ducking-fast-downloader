@@ -71,15 +71,19 @@ class FileSender {
         }
     }
 
-    async chucksBaseReady() {
-        // Inform about chucks base size
+    async sendCurrentChucksBaseSize() {
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: DataStructure.RESPONSE_INFO.CHUCKSBASE_SIZE, data })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
         await this.session.server.send(this.session, data)
+    }
+
+    async chucksBaseReady() {
+        // Inform about chucks base size
+        await this.sendCurrentChucksBaseSize()
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
-            data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
+            let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
             await this.session.server.send(this.session, data)
         }
 
@@ -182,15 +186,23 @@ export class Server {
                         break;
 
                     case DataStructure.SESSION_STATUS.IN_TRANSFER:
-                        let reqChucks = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, msg.data)
+                        switch (msg.type) {
+                            case DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_SIZE:
+                                session.fileSender.sendCurrentChucksBaseSize()
+                                break;
 
-                        let chucks = []
-                        for (let c = 0; c < reqChucks.numChucks; c++) {
-                            let val = reqChucks.data.readUInt16LE((c * 2), 2);
-                            chucks.push(val)
+                            case DataStructure.REQUEST_TYPE.REQUEST_CHUCKS:
+                                let reqChucks = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, msg.data)
+
+                                let chucks = []
+                                for (let c = 0; c < reqChucks.numChucks; c++) {
+                                    let val = reqChucks.data.readUInt16LE((c * 2), 2);
+                                    chucks.push(val)
+                                }
+
+                                session.fileSender.requestChucks(chucks)
+                                break;
                         }
-
-                        session.fileSender.requestChucks(chucks)
 
                         break;
                 }

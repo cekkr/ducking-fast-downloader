@@ -19,7 +19,8 @@ export const RESPONSE_INFO = {
 
 export const REQUEST_TYPE = {
     REQUEST_FILE: 1,
-    REQUEST_CHUCKSBASE_TYPE: 2
+    REQUEST_CHUCKSBASE_SIZE: 2,
+    REQUEST_CHUCKS: 3, // or end of chucks base
 }
 
 export const CLIENT_STATUS = {
