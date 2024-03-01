@@ -11,15 +11,16 @@ const HOST = '0.0.0.0';
 const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
 class FileSender {
-    constructor() {
-
+    constructor(session) {
+        this.session = session
     }
 }
 
 export class Server {
-    constructor() {
+    constructor(basePath) {
+        this.basePath = basePath
+
         this.sessions = {}
-        this.addressSession = {}
 
         this.initUdp()
     }
@@ -33,8 +34,17 @@ export class Server {
             if (session == 0) {
                 let path = msg.slice(1).toString('utf-8')
                 console.log(`Received request for file: ${path} from ${rinfo.address}:${rinfo.port}`);
-            }
 
+                let s = this.newSession()
+                let session = this.sessions[s] = {}
+                session.server = this
+                session.rinfo = rinfo
+                session.reqPath = path
+                session.fileSender = new FileSender(session)
+            }
+            else {
+
+            }
 
         });
 
@@ -44,6 +54,22 @@ export class Server {
         });
 
         this.server.bind(PORT, HOST);
+    }
+
+    newSession() {
+        for (let s = 1; s < 256; s++) {
+            if (!this.session[s])
+                return s
+        }
+    }
+
+    send(session, msg) {
+        this.server.send(msg, 0, msg.length, session.rinfo.port, session.rinfo.address, (error) => {
+            if (error) {
+                console.error('Error sending packet:', error);
+                this.server.close();
+            }
+        });
     }
 
     sendFile(filePath) {
