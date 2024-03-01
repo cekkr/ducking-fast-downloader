@@ -21,7 +21,7 @@ export const REQUEST_TYPE = {
 
 export const CLIENT_STATUS = {
     WAIT_SESSION: 0,
-    WAIT_CHUNKSBASE_INFO: 1
+    WAIT_CHUNKS: 1
 }
 
 export const SESSION_STATUS = {

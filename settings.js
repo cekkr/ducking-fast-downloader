@@ -7,3 +7,6 @@ export const Status = {
     ERR: 2,
     CHUCK_OFFSET: 3
 }
+
+export const VERIFIED_CHUCKS = Math.pow(10, 2) // 1024
+export const MAX_VERIFIED_CHUCKS = Math.pow(16, 2) - 1

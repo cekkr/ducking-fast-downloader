@@ -3,15 +3,13 @@ import fs from 'fs';
 import { pipeline } from 'stream';
 import { createReadStream } from 'fs';
 
-import { Settings, Status } from './settings';
+import * as Settings from './settings';
 import * as DataStructure from './dataStructure.js'
 
-const PORT = Settings.defaultPort;
+const PORT = Settings.Settings.defaultPort;
 const HOST = '0.0.0.0';
 //const server = dgram.createSocket('udp4');
 const CHUNK_SIZE = 1024; // Adjust based on your network environment
-
-const VERIFIED_CHUCKS = Math.pow(10, 2) // 1024
 
 class FileSender {
     constructor(session) {
@@ -68,10 +66,11 @@ class FileSender {
     async chucksBaseReady() {
         // Inform about chucks base size
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
         await this.session.server.send(this.session, data)
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
-            data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chunkNum: n, chunk: this.chucksBase[n] })
+            data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
             await this.session.server.send(this.session, data)
         }
     }
@@ -92,7 +91,7 @@ class FileSender {
         this.chucksBase[this.chunkNum] = chunk
         this.chunkNum++
 
-        if (this.chunkNum >= CHUNK_SIZE) {
+        if (this.chunkNum >= Settings.VERIFIED_CHUCKS) {
             this.readStream.pause();
             this.chucksBaseReady()
         }

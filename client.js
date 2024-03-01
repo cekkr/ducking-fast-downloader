@@ -1,10 +1,10 @@
 import dgram from 'dgram';
 import fs from 'fs';
 
-import { Settings, Status } from './settings.js';
+import * as Settings from './settings';
 import * as DataStructure from './dataStructure.js'
 
-const PORT = Settings.defaultPort;
+const PORT = Settings.Settings.defaultPort;
 const HOST = '127.0.0.1';
 //const client = dgram.createSocket('udp4');
 const fileName = 'example.txt'; // Change to the requested file name
@@ -26,9 +26,10 @@ export class Client {
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
+            let msg = null
             switch (this.status) {
                 case DataStructure.CLIENT_STATUS.WAIT_SESSION:
-                    let msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, data)
+                    msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, data)
                     let msgSession = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, msg.data)
                     this.sessionNum = msgSession.session
 
@@ -37,8 +38,29 @@ export class Client {
 
                     this.requestFile()
                     break;
+
+                case DataStructure.CLIENT_STATUS.WAIT_CHUNKS:
+                    msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, data)
+
+                    if (msg.chunkNum == Settings.MAX_VERIFIED_CHUCKS) {
+                        // ChucksBase size
+                        let msgSize = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, msg.data)
+                        this.chucksBaseSize = msgSize.chucksBaseSize
+                    }
+                    else {
+                        this.chucksBase[msg.chunkNum] = msg.data
+                        this.chucksBaseCount++
+                    }
+
+                    break;
             }
         });
+    }
+
+    createChucksBase() {
+        this.chucksBase = {}
+        this.chucksBaseCount = 0
+        this.chucksBaseSize = -1
     }
 
     close() {
@@ -70,6 +92,7 @@ export class Client {
         data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_FILE, data })
         this.send(data)
 
-        this.status = DataStructure.CLIENT_STATUS.WAIT_CHUNKSBASE_INFO
+        this.status = DataStructure.CLIENT_STATUS.WAIT_CHUNKS
+        this.createChucksBase()
     }
 }
