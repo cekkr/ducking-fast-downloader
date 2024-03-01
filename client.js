@@ -65,12 +65,22 @@ export class Client {
                     msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, data)
 
                     if (msg.chunkNum == Settings.MAX_VERIFIED_CHUCKS) {
-                        // ChucksBase size
-                        let msgSize = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, msg.data)
-                        this.chucksBaseSize = msgSize.chucksBaseSize
+                        let msgInfo = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, msg.data)
 
-                        if (this.chucksBaseCount > 0) {
-                            this.checkChucksBase()
+                        switch (msgInfo.info) {
+                            case DataStructure.RESPONSE_INFO.CHUCKSBASE_SIZE:
+                                // ChucksBase size
+                                let msgSize = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, msgInfo.data)
+                                this.chucksBaseSize = msgSize.chucksBaseSize
+
+                                if (this.chucksBaseCount > 0) {
+                                    this.checkChucksBase()
+                                }
+                                break;
+
+                            case DataStructure.RESPONSE_INFO.END_OF_FILE:
+                                this.writeStream.end()
+                                break;
                         }
                     }
                     else {
@@ -86,12 +96,17 @@ export class Client {
                                 this.checkChucksSizeTimeout = null
                             }
 
-                            let diffTime = this.lastChuckTime - this.firstChuckTime
-                            let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
-                            let forecastChucks = (diffTime / 1000) * chucksPerSecond
+                            if (this.chucksBaseSize == this.chucksBaseCount) {
+                                this.flushChucksBase()
+                            }
+                            else {
+                                let diffTime = this.lastChuckTime - this.firstChuckTime
+                                let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
+                                let forecastChucks = (diffTime / 1000) * chucksPerSecond
 
-                            if ((forecastChucks * 2) > this.chucksBaseSize) {
-                                this.checkChucksBase()
+                                if ((forecastChucks * 2) > this.chucksBaseSize) {
+                                    this.checkChucksBase()
+                                }
                             }
                         }
                         else {
@@ -109,6 +124,9 @@ export class Client {
             return;
 
         this.checkChucksSizeTimeout = setTimeout(() => {
+            if (this.chucksBaseSize == this.chucksBaseCount)
+                return;
+
             let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_TYPE, data: Buffer.alloc(0) })
             this.send(data)
         }, 250)
@@ -120,6 +138,18 @@ export class Client {
         this.chucksBaseSize = -1
 
         this.firstChuckTime = new Date().getTime()
+    }
+
+    flushChucksBase() {
+        for (let chuck of this.chucksBase) {
+            this.writeStream.write(chuck, (error) => {
+                if (error) {
+                    console.error('Error writing data to the file:', error);
+                } else {
+                    console.log('Data written successfully');
+                }
+            });
+        }
     }
 
     checkChucksBase() {
@@ -182,6 +212,27 @@ export class Client {
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_FILE, { chuckOffset, path: file })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_FILE, data })
         this.send(data)
+
+        ////
+        ////
+
+        this.writeStream = fs.createWriteStream(filePath, {
+            flags: 'r+', // Open file for reading and writing. The file is created if not existing.
+            start: (chuckOffset * Settings.CHUNK_SIZE),
+        });
+
+        // Listen for the 'finish' event to know when writing is complete
+        this.writeStream.on('finish', () => {
+            console.log('Finished writing to the file.');
+        });
+
+        // Handle any errors that occur during the write process
+        this.writeStream.on('error', (error) => {
+            console.error('An error occurred:', error.message);
+        });
+
+        ////
+        ////
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_CHUNKS
         this.createChucksBase()

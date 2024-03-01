@@ -9,7 +9,6 @@ import * as DataStructure from './dataStructure.js'
 const PORT = Settings.Settings.defaultPort;
 const HOST = '0.0.0.0';
 //const server = dgram.createSocket('udp4');
-const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
 class FileSender {
     constructor(session) {
@@ -17,7 +16,7 @@ class FileSender {
 
         // Start read stream
         let filePath = session.server.basePath + session.reqPath
-        let readStream = this.readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE, start: (session.offset * CHUNK_SIZE) });
+        let readStream = this.readStream = createReadStream(filePath, { highWaterMark: Settings.CHUNK_SIZE, start: (session.offset * Settings.CHUNK_SIZE) });
 
         this.chunkNum = 0
 
@@ -66,6 +65,7 @@ class FileSender {
     async chucksBaseReady() {
         // Inform about chucks base size
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, { chucksBaseSize: this.chucksBaseNum })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: Settings.CHUCKSBASE_SIZE, chunk: data })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
         await this.session.server.send(this.session, data)
 
@@ -76,7 +76,9 @@ class FileSender {
 
         if (this.EOF) {
             setTimeout(() => {
-                this.sendInfo(DataStructure.RESPONSE_INFO.END_OF_FILE)
+                let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: DataStructure.RESPONSE_INFO.END_OF_FILE, data: Buffer.alloc(0) })
+                data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
+                this.session.server.send(this.session, data)
             }, 500)
         }
     }
