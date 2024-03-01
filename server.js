@@ -17,8 +17,12 @@ class FileSender {
     constructor(session) {
         this.session = session
 
+        // Begin to create the chuck base
+        this.createChucksBase()
+
+        // Start read stream
         let filePath = session.server.basePath + session.reqPath
-        let readStream = this.readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
+        let readStream = this.readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE, start: (session.offset * CHUNK_SIZE) });
 
         this.chunkNum = 0
 
@@ -29,6 +33,10 @@ class FileSender {
 
         readStream.on('end', () => {
             this.EOF = true
+
+            if (this.chucksBaseNum > 0)
+                this.chucksBaseReady()
+
             console.log('Finished reading the file.');
         });
 
@@ -37,7 +45,7 @@ class FileSender {
             console.error('An error occurred:', error.message);
         });
 
-        this.sendInfo(Status.CHUCK_OFFSET)
+        //this.sendInfo(Status.CHUCK_OFFSET)        
     }
 
     sendInfo(info, data = null) {
@@ -56,6 +64,12 @@ class FileSender {
     createChucksBase() {
         this.chucksBase = {}
         this.chucksBaseNum = 0
+
+        this.processChunk()
+    }
+
+    async chucksBaseReady() {
+
     }
 
     readStreamChunk() {
@@ -66,19 +80,21 @@ class FileSender {
     processChunk() {
         let chunk;
         while (null === (chunk = readStream.read())) {
-            return; // Exit the loop and wait for the timeout before continuing
+            // loop
         }
 
-        if (!this.statusSent) {
-            this.sendInfo(Status.OK)
-            this.statusSent = true
-        }
+        console.log('Read a chunk of size:', chunk.length);
 
-        console.log('Received a chunk of size:', chunk.length);
-        this.readStream.pause();
-
-        this.lastChunk = chunk
+        this.chucksBase[this.chunkNum] = chunk
         this.chunkNum++
+
+        if (this.chunkNum >= CHUNK_SIZE) {
+            this.readStream.pause();
+            this.chucksBaseReady()
+        }
+        else {
+            this.processChunk()
+        }
     }
 
     sendChunk(chunk) {
@@ -166,37 +182,18 @@ export class Server {
     }
 
     send(session, msg) {
-        // for the moment is not necessary specify client session every time
-        // msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
+        return new Promise((res) => {
+            // for the moment is not necessary specify client session every time
+            // msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
 
-        this.server.send(msg, 0, msg.length, session.rinfo.port, session.rinfo.address, (error) => {
-            if (error) {
-                console.error('Error sending packet:', error);
-                this.server.close();
-            }
-        });
-    }
-
-    sendFile(filePath) {
-        const readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
-
-        readStream.on('data', (chunk) => {
-            this.server.send(chunk, 0, chunk.length, rinfo.port, rinfo.address, (error) => {
+            this.server.send(msg, 0, msg.length, session.rinfo.port, session.rinfo.address, (error) => {
                 if (error) {
-                    console.error('Error sending chunk:', error);
+                    console.error('Error sending packet:', error);
                     this.server.close();
                 }
+
+                res()
             });
-        });
-
-        readStream.on('end', () => {
-            console.log('File has been sent successfully.');
-            // Signal the client that the file transfer is complete
-            server.send('EOF', rinfo.port, rinfo.address);
-        });
-
-        readStream.on('error', (err) => {
-            console.error('Stream error:', err);
-        });
+        })
     }
 }
