@@ -182,7 +182,6 @@ export class Server {
                         break;
 
                     case DataStructure.SESSION_STATUS.IN_TRANSFER:
-                        //data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: buffers.length, data: data })
                         let reqChucks = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, msg.data)
 
                         let chucks = []

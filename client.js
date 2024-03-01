@@ -158,6 +158,13 @@ export class Client {
                 }
             });
         }
+
+        this.goOn()
+    }
+
+    goOn() {
+        let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: 0, data: Buffer.alloc(0) })
+        this.send(data)
     }
 
     checkChucksBase() {
