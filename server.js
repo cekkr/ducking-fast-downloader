@@ -12,6 +12,10 @@ const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
 const VERIFIED_CHUCKS = Math.pow(10, 2) // 1024
 
+const STATUS_OK = 1
+const STATUS_ERR = 2
+const STATUS_CHUCK_OFFSET = 2
+
 class FileSender {
     constructor(session) {
         this.session = session
@@ -21,15 +25,33 @@ class FileSender {
 
         this.chunkNum = 0
 
+        this.statusSent = false
+        this.EOF = false
+
         readStream.on('readable', readStreamChunk);
 
         readStream.on('end', () => {
+            this.EOF = true
             console.log('Finished reading the file.');
         });
 
         readStream.on('error', (error) => {
+            this.sendInfo(STATUS_ERR)
             console.error('An error occurred:', error.message);
         });
+
+        this.sendInfo(STATUS_CHUCK_OFFSET)
+    }
+
+    sendInfo(info) {
+        const bufferInfo = Buffer.alloc(2);
+        bufferInfo.writeUInt16LE(info, 0);
+
+        this.session.server.send(this.session, bufferInfo)
+    }
+
+    infoResponse(msg) {
+
     }
 
     createChucksBase() {
@@ -48,6 +70,11 @@ class FileSender {
             return; // Exit the loop and wait for the timeout before continuing
         }
 
+        if (!this.statusSent) {
+            this.sendInfo(STATUS_OK)
+            this.statusSent = true
+        }
+
         console.log('Received a chunk of size:', chunk.length);
         this.readStream.pause();
 
@@ -58,7 +85,7 @@ class FileSender {
     sendChunk(chunk) {
         let chunkBaseNum = this.chucksBaseNum++
         const bufferChunkNum = Buffer.alloc(2);
-        bufferChunkNum.writeUInt16LE(bufferChunkNum, 0);
+        bufferChunkNum.writeUInt16LE(chunkBaseNum, 0);
         const msg = Buffer.concat([bufferChunkNum, chunk]);
 
         this.chucksBase[chunkBaseNum] = msg
@@ -93,7 +120,7 @@ export class Server {
                 session.fileSender = new FileSender(session)
             }
             else {
-
+                let session = this.sessions[s]
             }
 
         });
