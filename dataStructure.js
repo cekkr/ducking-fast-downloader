@@ -11,6 +11,15 @@ export const RESPONSE_INFO = {
     SET_SESSION: 1
 }
 
+export const REQUEST_TYPE = {
+    REQUEST_FILE: 1
+}
+
+export const CLIENT_STATUS = {
+    WAIT_SESSION: 0,
+    WAIT_CHUNKSBASE_INFO: 1
+}
+
 export function readSchema(schema, data) {
     let obj = {}
 

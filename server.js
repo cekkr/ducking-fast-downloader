@@ -144,7 +144,8 @@ export class Server {
     }
 
     send(session, msg) {
-        msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
+        // for the moment is not necessary specify client session every time
+        // msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
 
         this.server.send(msg, 0, msg.length, session.rinfo.port, session.rinfo.address, (error) => {
             if (error) {

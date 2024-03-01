@@ -11,10 +11,10 @@ const fileName = 'example.txt'; // Change to the requested file name
 const outputFile = 'received_file.txt'; // Change to the desired output file name
 
 export class Client {
-    constructor(address, opts = {}) {
+    constructor(address) {
         this.address = address
 
-        this.offset = opts.offset || 0
+        this.offset = 0
 
         this.sessionNum = 0
 
@@ -24,29 +24,19 @@ export class Client {
     initUdp() {
         this.client = dgram.createSocket('udp4')
 
-        let waitInfo = true
-        this.client.on('message', (msg, rinfo) => {
+        this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
+        this.client.on('message', (data, rinfo) => {
+            switch (this.status) {
+                case DataStructure.CLIENT_STATUS.WAIT_SESSION:
+                    let msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, data)
+                    let msgSession = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_SESSION, msg.data)
+                    this.sessionNum = msgSession.session
 
-            if (waitInfo) {
-                let info = msg.readUInt16LE(0, 2);
+                    this.waitSessionStarted()
+                    this.waitSessionStarted = null
 
-                switch (info) {
-                    case Status.CHUCK_OFFSET:
-                        const bufferOffset = Buffer.alloc(4);
-                        bufferOffset.writeUInt16LE(this.offset, 0);
-                        this.send(bufferOffset)
-                        break;
-                }
-            }
-            else {
-                if (msg.toString() === 'EOF') {
-                    console.log('File transfer complete.');
-                    writeStream.end();
-                    this.close();
-                } else {
-                    console.log(`Received chunk from ${rinfo.address}:${rinfo.port}`);
-                    writeStream.write(msg);
-                }
+                    this.requestFile()
+                    break;
             }
         });
     }
@@ -75,10 +65,11 @@ export class Client {
         })
     }
 
-    requestFile(file) {
-        const bufferOp = Buffer.alloc(1);
-        bufferOp.writeUInt8LE(0, 0);
-        const msg = Buffer.concat([bufferOp, Buffer.from(file, 'utf-8')]);
-        this.send(msg)
+    requestFile(file, offset = 0) {
+        let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_FILE, { chuckOffset, path: file })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_FILE, data })
+        this.send(data)
+
+        this.status = DataStructure.CLIENT_STATUS.WAIT_CHUNKSBASE_INFO
     }
 }
