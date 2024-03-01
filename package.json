@@ -1,0 +1,28 @@
+{
+  "name": "ducking-fast-downloader",
+  "version": "0.0.1",
+  "description": "Download fastly files from a remove server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "ducking": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cekkr/ducking-fast-downloader.git"
+  },
+  "keywords": [
+    "downloader",
+    "fast",
+    "udp"
+  ],
+  "author": "cekkr <rcecchini.ds@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cekkr/ducking-fast-downloader/issues"
+  },
+  "homepage": "https://github.com/cekkr/ducking-fast-downloader#readme"
+}
