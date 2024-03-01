@@ -51,15 +51,24 @@ class FileSender {
         this.session.server.send(this.session, info)
     }
 
-    infoResponse(msg) {
-
-    }
 
     createChucksBase() {
         this.chucksBase = {}
         this.chucksBaseNum = 0
 
         this.processChunk()
+    }
+
+    async requestChucks(chucks) {
+        if (chucks.length == 0) {
+            this.createChucksBase()
+        }
+        else {
+            for (let n of chucks) {
+                let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
+                await this.session.server.send(this.session, data)
+            }
+        }
     }
 
     async chucksBaseReady() {
@@ -156,18 +165,33 @@ export class Server {
                     return;
                 }
 
+                msg = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST, msg.data)
                 switch (session.status) {
                     case DataStructure.SESSION_STATUS.WAIT_FOR_REQUEST:
-                        msg = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST, msg.data)
-
                         switch (msg.type) {
                             case DataStructure.REQUEST_TYPE.REQUEST_FILE:
                                 let reqFile = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_FILE, msg.data)
                                 session.offset = reqFile.chuckOffset
                                 session.reqPath = reqFile.path
                                 session.fileSender = new FileSender(session)
+
+                                session.status = DataStructure.SESSION_STATUS.IN_TRANSFER
                                 break;
                         }
+
+                        break;
+
+                    case DataStructure.SESSION_STATUS.IN_TRANSFER:
+                        //data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, { numChucks: buffers.length, data: data })
+                        let reqChucks = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, msg.data)
+
+                        let chucks = []
+                        for (let c = 0; c < reqChucks.numChucks; c++) {
+                            let val = reqChucks.data.readUInt16LE((c * 2), 2);
+                            chucks.push(val)
+                        }
+
+                        session.fileSender.requestChucks(chucks)
 
                         break;
                 }

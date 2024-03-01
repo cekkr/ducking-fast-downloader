@@ -28,7 +28,8 @@ export const CLIENT_STATUS = {
 }
 
 export const SESSION_STATUS = {
-    WAIT_FOR_REQUEST: 0
+    WAIT_FOR_REQUEST: 0,
+    IN_TRANSFER: 1
 }
 
 export function readSchema(schema, data) {
