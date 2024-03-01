@@ -1,4 +1,5 @@
 import { Server } from './server.js'
+import { Client } from './client.js'
 
 let args = [...process.argv]
 args.splice(0, 2)
@@ -19,4 +20,6 @@ if (first == 'server') {
 }
 else {
     // client...
+    let client = new Client(args[0])
+    client.requestFile(args[1])
 }
