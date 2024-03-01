@@ -10,34 +10,19 @@ const HOST = '0.0.0.0';
 //const server = dgram.createSocket('udp4');
 const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
+class FileSender {
+    constructor() {
+
+    }
+}
+
 export class Server {
     constructor() {
         this.server = dgram.createSocket('udp4');
 
         this.server.on('message', (msg, rinfo) => {
             console.log(`Received request for file: ${msg} from ${rinfo.address}:${rinfo.port}`);
-
             const filePath = msg.toString();
-            const readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
-
-            readStream.on('data', (chunk) => {
-                this.server.send(chunk, 0, chunk.length, rinfo.port, rinfo.address, (error) => {
-                    if (error) {
-                        console.error('Error sending chunk:', error);
-                        this.server.close();
-                    }
-                });
-            });
-
-            readStream.on('end', () => {
-                console.log('File has been sent successfully.');
-                // Signal the client that the file transfer is complete
-                server.send('EOF', rinfo.port, rinfo.address);
-            });
-
-            readStream.on('error', (err) => {
-                console.error('Stream error:', err);
-            });
         });
 
         this.server.on('listening', () => {
@@ -46,5 +31,28 @@ export class Server {
         });
 
         this.server.bind(PORT, HOST);
+    }
+
+    sendFile(filePath) {
+        const readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
+
+        readStream.on('data', (chunk) => {
+            this.server.send(chunk, 0, chunk.length, rinfo.port, rinfo.address, (error) => {
+                if (error) {
+                    console.error('Error sending chunk:', error);
+                    this.server.close();
+                }
+            });
+        });
+
+        readStream.on('end', () => {
+            console.log('File has been sent successfully.');
+            // Signal the client that the file transfer is complete
+            server.send('EOF', rinfo.port, rinfo.address);
+        });
+
+        readStream.on('error', (err) => {
+            console.error('Stream error:', err);
+        });
     }
 }
