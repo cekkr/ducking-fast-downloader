@@ -1,5 +1,6 @@
 import dgram from 'dgram';
 import fs from 'fs';
+import path from 'path';
 
 import * as Settings from './settings';
 import * as DataStructure from './dataStructure.js'
@@ -216,7 +217,7 @@ export class Client {
         ////
         ////
 
-        this.writeStream = fs.createWriteStream(filePath, {
+        this.writeStream = fs.createWriteStream(path.basename(file), {
             flags: 'r+', // Open file for reading and writing. The file is created if not existing.
             start: (chuckOffset * Settings.CHUNK_SIZE),
         });
