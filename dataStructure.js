@@ -1,5 +1,7 @@
 
-export const SCHEMA_HELLO = ['session:UInt:8', 'data:Data']
+export const SCHEMA = ['session:UInt:8', 'data:Data']
+export const SCHEMA_REQUEST = ['type:UInt:8', 'data:Data']
+export const SCHEMA_REQUEST_FILE = ['chuckOffset:UInt:32', 'path:String']
 
 export function readSchema(schema, data) {
     let obj = {}
