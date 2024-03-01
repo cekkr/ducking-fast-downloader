@@ -10,9 +10,59 @@ const HOST = '0.0.0.0';
 //const server = dgram.createSocket('udp4');
 const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
+const VERIFIED_CHUCKS = Math.pow(10, 2) // 1024
+
 class FileSender {
     constructor(session) {
         this.session = session
+
+        let filePath = session.server.basePath + session.reqPath
+        let readStream = this.readStream = createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
+
+        this.chunkNum = 0
+
+        readStream.on('readable', readStreamChunk);
+
+        readStream.on('end', () => {
+            console.log('Finished reading the file.');
+        });
+
+        readStream.on('error', (error) => {
+            console.error('An error occurred:', error.message);
+        });
+    }
+
+    createChucksBase() {
+        this.chucksBase = {}
+        this.chucksBaseNum = 0
+    }
+
+    readStreamChunk() {
+        this.processChunk();
+    }
+
+    // call it to resume the stream
+    processChunk() {
+        let chunk;
+        while (null === (chunk = readStream.read())) {
+            return; // Exit the loop and wait for the timeout before continuing
+        }
+
+        console.log('Received a chunk of size:', chunk.length);
+        this.readStream.pause();
+
+        this.lastChunk = chunk
+        this.chunkNum++
+    }
+
+    sendChunk(chunk) {
+        let chunkBaseNum = this.chucksBaseNum++
+        const bufferChunkNum = Buffer.alloc(2);
+        bufferChunkNum.writeUInt16LE(bufferChunkNum, 0);
+        const msg = Buffer.concat([bufferChunkNum, chunk]);
+
+        this.chucksBase[chunkBaseNum] = msg
+        this.session.server.send(this.session, msg)
     }
 }
 
