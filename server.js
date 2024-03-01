@@ -4,6 +4,8 @@ const server = dgram.createSocket('udp4');
 const PORT = 41234;
 const HOST = '0.0.0.0';
 
+const MAX_PACKET_SIZE = 1452 // bytes
+
 server.on('error', (err) => {
   console.log(`server error:\n${err.stack}`);
   server.close();
