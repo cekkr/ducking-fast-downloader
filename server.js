@@ -60,12 +60,16 @@ class FileSender {
         this.processChunk()
     }
 
+    endSession() {
+        this.sendEnfOfFile()
+        delete this.session.server.sessions[this.session.num]
+        console.log("End of session ", this.session.num)
+    }
+
     async requestChucks(chucks) {
         if (chucks.length == 0) {
             if (this.EOF) {
-                this.sendEnfOfFile()
-                delete this.session.server.sessions[this.session.num]
-                console.log("End of session ", this.session.num)
+                this.endSession()
             }
             else {
                 //console.log("next chucksbase")
@@ -158,6 +162,19 @@ export class Server {
     initUdp() {
         this.server = dgram.createSocket('udp4');
 
+        this.ttlInterval = setInterval(() => {
+            let now = Settings.now()
+            for (let s in this.sessions) {
+                let session = this.sessions[s]
+                if (session) {
+                    let diff = now - session.lastReply
+                    if (diff > 30) {
+                        session.endSession()
+                    }
+                }
+            }
+        }, 1000)
+
         this.server.on('message', (data, rinfo) => {
             let msg = DataStructure.readSchema(DataStructure.SCHEMA, data)
 
@@ -167,7 +184,7 @@ export class Server {
                 console.log(`Received new session request from ${rinfo.address}:${rinfo.port}`);
 
                 let s = this.newSession()
-                let session = this.sessions[s] = { num: s }
+                let session = this.sessions[s] = { num: s, lastReply: Settings.now() }
                 session.server = this
                 session.rinfo = rinfo
                 session.status = DataStructure.SESSION_STATUS.WAIT_FOR_REQUEST
@@ -180,6 +197,8 @@ export class Server {
             }
             else {
                 let session = this.sessions[msg.session]
+
+                session.lastReply = Settings.now()
 
                 if (!session) {
                     console.error("Not existing session:", s)

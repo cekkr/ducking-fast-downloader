@@ -25,6 +25,8 @@ export class Client {
         this.packetsTime = {}
         this.avgReceivedPackets = 0
         this.avgChuckSize = 0
+
+        this.receivedBytes = 0
     }
 
     addPacketsTime(size) {
@@ -61,7 +63,8 @@ export class Client {
 
                     setInterval(() => {
                         let speedMb = Math.floor(this.avgReceivedPackets / 1024) / 1024
-                        console.log("Avg speed download: ", (speedMb), " MB/s")
+                        let downloadedMb = Math.floor(this.receivedBytes / 1024) / 1024
+                        console.log("Avg speed download: ", speedMb, " MB/s \t Downloaded: ", downloadedMb, " MB/s")
                     }, 500)
 
                     this.waitSessionStarted()
@@ -104,6 +107,8 @@ export class Client {
                     else {
                         this.chucksBase[msg.chunkNum] = msg.chunk
                         this.chucksBaseCount++
+
+                        this.receivedBytes += msg.chunk.length
 
                         this.lastChuckTime = new Date().getTime()
                         this.avgChuckSize = (this.avgChuckSize + data.length) / 2
