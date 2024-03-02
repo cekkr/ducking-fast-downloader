@@ -88,10 +88,11 @@ export class Client {
 
                             case DataStructure.RESPONSE_INFO.END_OF_FILE:
 
+                                console.log("Received END OF FILE")
                                 this.EOF = true
 
                                 setInterval(() => {
-                                    if (this.chucksBaseSize == this.chucksBaseCount) {
+                                    if (this.chucksBaseSize == this.chucksBaseCount || this.chucksBaseSize == -1) {
                                         this.writeStream.end()
                                         process.exit(0)
                                     }
@@ -108,22 +109,24 @@ export class Client {
                         this.avgChuckSize = (this.avgChuckSize + data.length) / 2
 
                         if (this.chucksBaseSize >= 0) {
-                            if (this.checkChucksSizeTimeout) {
-                                clearTimeout(this.checkChucksSizeTimeout)
-                                this.checkChucksSizeTimeout = null
-                            }
+
+                            clearTimeout(this.checkChucksBaseTimeout)
 
                             if (this.chucksBaseSize == this.chucksBaseCount) {
                                 this.flushChucksBase()
                             }
                             else {
-                                let diffTime = this.lastChuckTime - this.firstChuckTime
+                                /*let diffTime = this.lastChuckTime - this.firstChuckTime
                                 let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
                                 let forecastChucks = (diffTime / 1000) * chucksPerSecond
 
                                 if ((forecastChucks * 2) > this.chucksBaseSize) {
                                     this.checkChucksBase()
-                                }
+                                }*/
+
+                                this.checkChucksBaseTimeout = setTimeout(() => {
+                                    this.checkChucksBase()
+                                }, 100)
                             }
                         }
                         else {
@@ -139,6 +142,8 @@ export class Client {
     checkChucksSize() {
         if (this.checkChucksSizeTimeout || this.chucksBaseSize == this.chucksBaseCount)
             return;
+
+        clearTimeout(this.checkChucksSizeTimeout)
 
         this.checkChucksSizeTimeout = setTimeout(() => {
             if (this.chucksBaseSize == this.chucksBaseCount)

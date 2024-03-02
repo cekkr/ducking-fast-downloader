@@ -63,10 +63,12 @@ class FileSender {
     async requestChucks(chucks) {
         if (chucks.length == 0) {
             if (this.EOF) {
+                this.sendEnfOfFile()
                 delete this.session.server.sessions[this.session.num]
                 console.log("End of session ", this.session.num)
             }
             else {
+                console.log("next chucksbase")
                 this.createChucksBase()
             }
         }
@@ -91,20 +93,20 @@ class FileSender {
     }
 
     async chucksBaseReady() {
+        console.log("processing chucksbase")
+
         // Inform about chucks base size
         await this.sendCurrentChucksBaseSize()
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
             await this.sendChuckNum(n)
         }
+    }
 
-        if (this.EOF) {
-            setTimeout(() => {
-                let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: DataStructure.RESPONSE_INFO.END_OF_FILE, data: Buffer.alloc(0) })
-                data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
-                this.session.server.send(this.session, data)
-            }, 500)
-        }
+    sendEnfOfFile() {
+        let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_INFO, { info: DataStructure.RESPONSE_INFO.END_OF_FILE, data: Buffer.alloc(0) })
+        data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: Settings.MAX_VERIFIED_CHUCKS, chunk: data })
+        this.session.server.send(this.session, data)
     }
 
     // call it to resume the stream
