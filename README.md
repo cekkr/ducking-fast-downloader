@@ -20,4 +20,4 @@ And on the client:
 $ ducking myserver.com myfile.zip
 ```
 
-This is an experimental file transfer protocol based on UDP connection. No one will use it, but it exists.
+This is an experimental file transfer protocol based on UDP connection. No one will use it, but it exists. Maybe is necessary to use an IP client-side, if the name server doesn't work.
