@@ -68,7 +68,7 @@ class FileSender {
                 console.log("End of session ", this.session.num)
             }
             else {
-                console.log("next chucksbase")
+                //console.log("next chucksbase")
                 this.createChucksBase()
             }
         }
@@ -93,7 +93,7 @@ class FileSender {
     }
 
     async chucksBaseReady() {
-        console.log("processing chucksbase")
+        //console.log("processing chucksbase")
 
         // Inform about chucks base size
         await this.sendCurrentChucksBaseSize()
@@ -119,7 +119,7 @@ class FileSender {
             return
         }
 
-        console.log('Read a chunk of size:', chunk.length);
+        //console.log('Read a chunk of size:', chunk.length);
 
         this.chucksBase[this.chucksBaseNum] = chunk
         this.chucksBaseNum++
