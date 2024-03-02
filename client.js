@@ -47,7 +47,7 @@ export class Client {
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
-            console.log("received msg")
+            //console.log("received msg")
             this.addPacketsTime(data.length)
 
             let msg = null
@@ -58,6 +58,11 @@ export class Client {
                     this.sessionNum = msgSession.session
 
                     console.log("Session number: ", this.sessionNum)
+
+                    setInterval(() => {
+                        let speedMb = Math.floor(this.avgReceivedPackets / 1024) / 1024
+                        console.log("Avg speed download: ", (speedMb), " MB/s")
+                    }, 500)
 
                     this.waitSessionStarted()
                     this.waitSessionStarted = null
