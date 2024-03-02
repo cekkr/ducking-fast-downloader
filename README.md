@@ -1,4 +1,4 @@
-# ducking-fast-downloader
+# ducking fast downloader
 A ducking fast downloader where you can download something (like using GIT LFS) on a server and then move it locally using an UDP connection with a sort of long-term acknowledge system without compromise performances.
 
 ## How to use it
