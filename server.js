@@ -56,6 +56,7 @@ class FileSender {
         this.chucksBase = {}
         this.chucksBaseNum = 0
 
+        this.streamPause = false
         this.processChunk()
     }
 
@@ -71,10 +72,15 @@ class FileSender {
         }
         else {
             for (let n of chucks) {
-                let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
-                await this.session.server.send(this.session, data)
+                await this.sendChuckNum(n)
             }
         }
+    }
+
+    async sendChuckNum(n) {
+        //console.log("sending chuck num ", n)
+        let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
+        await this.session.server.send(this.session, data)
     }
 
     async sendCurrentChucksBaseSize() {
@@ -89,8 +95,7 @@ class FileSender {
         await this.sendCurrentChucksBaseSize()
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
-            let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
-            await this.session.server.send(this.session, data)
+            await this.sendChuckNum(n)
         }
 
         if (this.EOF) {
@@ -104,6 +109,9 @@ class FileSender {
 
     // call it to resume the stream
     processChunk() {
+        if (this.streamPause)
+            return
+
         let chunk;
         if (null === (chunk = this.readStream.read())) {
             return
@@ -115,8 +123,9 @@ class FileSender {
         this.chucksBaseNum++
         this.chunkNum++
 
-        if (this.chunkNum >= Settings.VERIFIED_CHUCKS) {
+        if (this.chucksBaseNum >= Settings.VERIFIED_CHUCKS) {
             this.readStream.pause();
+            this.streamPause = true
             this.chucksBaseReady()
         }
         else {

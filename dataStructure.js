@@ -119,5 +119,10 @@ export function writeSchema(schema, obj) {
         }
     }
 
-    return Buffer.concat(buffers)
+    try {
+        return Buffer.concat(buffers)
+    }
+    catch {
+        console.error("Empty response (debug)")
+    }
 }

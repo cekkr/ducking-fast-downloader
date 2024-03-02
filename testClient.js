@@ -6,7 +6,7 @@ async function main() {
     await client.startSession()
     console.log("session started")
 
-    client.requestFile("kchat.sql")
+    client.requestFile("big.dmg")
 }
 
 main()

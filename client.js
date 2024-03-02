@@ -28,7 +28,7 @@ export class Client {
     }
 
     addPacketsTime(size) {
-        let now = Math.floor((new Date()).getTime / 1000)
+        let now = Math.floor((new Date()).getTime() / 1000)
         if (!this.packetsTime[now]) {
             let prev = this.packetsTime[now - 1]
             if (prev) {
@@ -164,11 +164,12 @@ export class Client {
                 if (error) {
                     console.error('Error writing data to the file:', error);
                 } else {
-                    console.log('Data written successfully');
+                    //console.log('Data written successfully');
                 }
             });
         }
 
+        this.createChucksBase()
         this.goOn()
     }
 
