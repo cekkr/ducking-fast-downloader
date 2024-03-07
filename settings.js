@@ -1,5 +1,5 @@
 export const Settings = {
-    defaultPort: 41234
+    defaultPort: 41294
 }
 
 export const Status = {
