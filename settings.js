@@ -8,7 +8,7 @@ export const Status = {
     CHUCK_OFFSET: 3
 }
 
-export const VERIFIED_CHUCKS = Math.pow(2, 11) // Maximumum allowed: 15
+export const VERIFIED_CHUCKS = Math.pow(2, 12) // Maximumum allowed: 15
 export const MAX_VERIFIED_CHUCKS = Math.pow(2, 16) - 1
 export const CHUNK_SIZE = 1024; // Adjust based on your network environment
 
