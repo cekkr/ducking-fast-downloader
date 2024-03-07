@@ -19,6 +19,7 @@ export class Client {
 
         this.sessionNum = 0
 
+        this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.initUdp()
 
         // time
@@ -47,13 +48,17 @@ export class Client {
     initUdp() {
         this.client = dgram.createSocket('udp4')
 
-        this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
 
             clearTimeout(this.lastPacketTimeout)
             this.lastPacketTimeout = setTimeout(() => {
                 // try to restart the connection
+                console.log("restarting connection")
                 this.initUdp()
+
+                setTimeout(() => {
+                    this.checkChucksBase()
+                }, 500)
             }, 1000)
 
             //console.log("received msg")
@@ -223,9 +228,12 @@ export class Client {
     checkChucksBase() {
         console.log("checkChucksBase()")
         let chucksToRequest = []
+        let emptyRequest = true
 
         const FLUSH_AT = 512
         const flush = () => {
+            emptyRequest = !(chucksToRequest.length > 0) && emptyRequest
+
             let buffers = []
             for (let chuck of chucksToRequest) {
                 let buffer = Buffer.alloc(2)
@@ -250,7 +258,7 @@ export class Client {
             }
         }
 
-        if (chucksToRequest.length > 0)
+        if (chucksToRequest.length > 0 || emptyRequest)
             flush()
 
         this.waitChuckbase = setTimeout(() => {
