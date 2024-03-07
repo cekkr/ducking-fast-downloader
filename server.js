@@ -169,7 +169,7 @@ export class Server {
                 if (session) {
                     let diff = now - session.lastReply
                     if (diff > 30) {
-                        session.endSession()
+                        session.fileSender.endSession()
                     }
                 }
             }
@@ -262,7 +262,7 @@ export class Server {
     }
 
     send(session, msg) {
-        return new Promise((res) => {
+        return new Promise((res, err) => {
             // for the moment is not necessary specify client session every time
             // msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: session.num, data: msg })
 
@@ -270,9 +270,11 @@ export class Server {
                 if (error) {
                     console.error('Error sending packet:', error);
                     this.server.close();
+                    err()
                 }
-
-                res()
+                else {
+                    res()
+                }
             });
         })
     }
