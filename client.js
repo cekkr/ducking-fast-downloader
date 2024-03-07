@@ -118,7 +118,7 @@ export class Client {
                             clearTimeout(this.checkChucksBaseTimeout)
 
                             if (this.chucksBaseSize == this.chucksBaseCount) {
-                                console.log("flushChucksBase call")
+                                //console.log("flushChucksBase call")
                                 this.flushChucksBase()
                             }
                             else {
