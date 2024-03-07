@@ -103,7 +103,7 @@ class FileSender {
         await this.sendCurrentChucksBaseSize()
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
-            await this.sendChuckNum(n)
+            this.sendChuckNum(n) // removed await
         }
     }
 
