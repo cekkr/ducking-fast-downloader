@@ -181,6 +181,8 @@ export class Server {
 
             let session = msg.session
 
+            console.log("Session: ", session)
+
             if (session == 0) {
                 console.log(`Received new session request from ${rinfo.address}:${rinfo.port}`);
 

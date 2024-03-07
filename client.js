@@ -106,6 +106,8 @@ export class Client {
 
                                 break;
                         }
+
+                        this.checkChucksStatus()
                     }
                     else {
                         this.chucksBase[msg.chunkNum] = msg.chunk
@@ -117,24 +119,7 @@ export class Client {
                         this.avgChuckSize = (this.avgChuckSize + data.length) / 2
 
                         if (this.chucksBaseSize >= 0) {
-
-                            clearTimeout(this.checkChucksBaseTimeout)
-
-                            if (this.chucksBaseSize == this.chucksBaseCount) {
-                                //console.log("flushChucksBase call")
-                                this.flushChucksBase()
-                            }
-                            else {
-                                let diffTime = this.lastChuckTime - this.firstChuckTime
-                                let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
-                                let forecastChucks = (diffTime / 1000) * chucksPerSecond
-
-                                if ((forecastChucks * 10) > this.chucksBaseSize) {
-                                    this.checkChucksBaseTimeout = setTimeout(() => {
-                                        this.checkChucksBase()
-                                    }, 100)
-                                }
-                            }
+                            this.checkChucksStatus()
                         }
                         else {
                             this.checkChucksSize()
@@ -144,6 +129,26 @@ export class Client {
                     break;
             }
         });
+    }
+
+    checkChucksStatus() {
+        clearTimeout(this.checkChucksBaseTimeout)
+
+        if (this.chucksBaseSize == this.chucksBaseCount) {
+            //console.log("flushChucksBase call")
+            this.flushChucksBase()
+        }
+        else {
+            let diffTime = this.lastChuckTime - this.firstChuckTime
+            let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
+            let forecastChucks = (diffTime / 1000) * chucksPerSecond
+
+            if ((forecastChucks * 10) > this.chucksBaseSize) {
+                this.checkChucksBaseTimeout = setTimeout(() => {
+                    this.checkChucksBase()
+                }, 100)
+            }
+        }
     }
 
     checkChucksSize() {
