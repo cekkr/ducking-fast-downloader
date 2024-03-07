@@ -169,7 +169,8 @@ export class Server {
                 if (session) {
                     let diff = now - session.lastReply
                     if (diff > 30) {
-                        session.fileSender.endSession()
+                        if (session.fileSender)
+                            session.fileSender.endSession()
                     }
                 }
             }
@@ -224,10 +225,12 @@ export class Server {
                     case DataStructure.SESSION_STATUS.IN_TRANSFER:
                         switch (msg.type) {
                             case DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_SIZE:
+                                console.log('DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_SIZE')
                                 session.fileSender.sendCurrentChucksBaseSize()
                                 break;
 
                             case DataStructure.REQUEST_TYPE.REQUEST_CHUCKS:
+                                console.log('DataStructure.REQUEST_TYPE.REQUEST_CHUCKS')
                                 let reqChucks = DataStructure.readSchema(DataStructure.SCHEMA_REQUEST_CHUCKS, msg.data)
 
                                 let chucks = []
@@ -238,6 +241,9 @@ export class Server {
 
                                 session.fileSender.requestChucks(chucks)
                                 break;
+
+                            default:
+                                console.log("Unmanaged type: ", msg.type)
                         }
 
                         break;

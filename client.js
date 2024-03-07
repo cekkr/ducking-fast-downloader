@@ -75,6 +75,13 @@ export class Client {
                 case DataStructure.CLIENT_STATUS.WAIT_CHUNKS:
                     msg = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, data)
 
+                    if (this.waitChuckbase) {
+                        clearTimeout(this.waitChuckbase)
+                        this.waitChuckbase = null
+
+                        console.log("waitChuckbase interrupted")
+                    }
+
                     if (msg.chunkNum == Settings.MAX_VERIFIED_CHUCKS) {
                         let msgInfo = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO, msg.chunk)
 
@@ -83,10 +90,6 @@ export class Client {
                                 // ChucksBase size
                                 let msgSize = DataStructure.readSchema(DataStructure.SCHEMA_RESPONSE_INFO_CHUCKSBASE, msgInfo.data)
                                 this.chucksBaseSize = msgSize.chucksBaseSize
-
-                                if (this.chucksBaseCount > 0) {
-                                    this.checkChucksBase()
-                                }
                                 break;
 
                             case DataStructure.RESPONSE_INFO.END_OF_FILE:
@@ -122,17 +125,15 @@ export class Client {
                                 this.flushChucksBase()
                             }
                             else {
-                                /*let diffTime = this.lastChuckTime - this.firstChuckTime
+                                let diffTime = this.lastChuckTime - this.firstChuckTime
                                 let chucksPerSecond = this.avgReceivedPackets / this.avgChuckSize
                                 let forecastChucks = (diffTime / 1000) * chucksPerSecond
 
-                                if ((forecastChucks * 2) > this.chucksBaseSize) {
-                                    this.checkChucksBase()
-                                }*/
-
-                                this.checkChucksBaseTimeout = setTimeout(() => {
-                                    this.checkChucksBase()
-                                }, 100)
+                                if ((forecastChucks * 10) > this.chucksBaseSize) {
+                                    this.checkChucksBaseTimeout = setTimeout(() => {
+                                        this.checkChucksBase()
+                                    }, 100)
+                                }
                             }
                         }
                         else {
@@ -146,14 +147,22 @@ export class Client {
     }
 
     checkChucksSize() {
-        if (this.checkChucksSizeTimeout || this.chucksBaseSize == this.chucksBaseCount)
+        if (this.chucksBaseSize == this.chucksBaseCount)
             return;
 
         clearTimeout(this.checkChucksSizeTimeout)
 
         this.checkChucksSizeTimeout = setTimeout(() => {
-            if (this.chucksBaseSize == this.chucksBaseCount)
+            if (this.chucksBaseSize < 0) {
                 return;
+            }
+
+            if (this.chucksBaseSize == this.chucksBaseCount) {
+                this.flushChucksBase()
+                return;
+            }
+
+            console.log("checkChucksSize()")
 
             let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_CHUCKSBASE_SIZE, data: Buffer.alloc(0) })
             this.send(data)
@@ -169,15 +178,24 @@ export class Client {
     }
 
     flushChucksBase() {
+        if (this.chucksBaseCount != this.chucksBaseSize)
+            return;
+
+        console.log("flushChucksBase()")
+
         for (let c in this.chucksBase) {
             let chuck = this.chucksBase[c]
-            this.writeStream.write(chuck, (error) => {
-                if (error) {
-                    console.error('Error writing data to the file:', error);
-                } else {
-                    //console.log('Data written successfully');
-                }
-            });
+
+            if (chuck) {
+                this.writeStream.write(chuck, (error) => {
+                    if (error) {
+                        console.error('Error writing data to the file:', error);
+                    } else {
+                        //console.log('Data written successfully');
+                        this.chucksBase[c] = null
+                    }
+                });
+            }
         }
 
         this.createChucksBase()
@@ -191,6 +209,7 @@ export class Client {
     }
 
     checkChucksBase() {
+        console.log("checkChucksBase()")
         let chucksToRequest = []
 
         const FLUSH_AT = 512
@@ -221,6 +240,10 @@ export class Client {
 
         if (chucksToRequest.length > 0)
             flush()
+
+        this.waitChuckbase = setTimeout(() => {
+            this.checkChucksBase()
+        }, 1000)
     }
 
     close() {
