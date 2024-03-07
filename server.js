@@ -243,10 +243,13 @@ export class Server {
                                 break;
 
                             default:
-                                console.log("Unmanaged type: ", msg.type)
+                                console.log("Unmanaged REQUEST_TYPE: ", msg.type)
                         }
 
                         break;
+
+                    default:
+                        console.log("Unmanaged SESSION_STATUS: ", session.status)
                 }
             }
 
