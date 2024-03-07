@@ -49,6 +49,13 @@ export class Client {
 
         this.status = DataStructure.CLIENT_STATUS.WAIT_SESSION
         this.client.on('message', (data, rinfo) => {
+
+            clearTimeout(this.lastPacketTimeout)
+            this.lastPacketTimeout = setTimeout(() => {
+                // try to restart the connection
+                this.initUdp()
+            }, 1000)
+
             //console.log("received msg")
             this.addPacketsTime(data.length)
 

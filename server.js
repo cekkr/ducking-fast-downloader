@@ -200,6 +200,7 @@ export class Server {
             }
             else {
                 let session = this.sessions[msg.session]
+                session.rinfo = rinfo
 
                 session.lastReply = Settings.now()
 
