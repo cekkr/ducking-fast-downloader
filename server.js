@@ -86,7 +86,7 @@ class FileSender {
     async sendChuckNum(n) {
         //console.log("sending chuck num ", n)
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_RESPONSE_CHUNK, { chunkNum: n, chunk: this.chucksBase[n] })
-        await this.session.server.send(this.session, data)
+        this.session.server.send(this.session, data) // remove await
     }
 
     async sendCurrentChucksBaseSize() {
@@ -103,7 +103,7 @@ class FileSender {
         await this.sendCurrentChucksBaseSize()
 
         for (let n = 0; n < this.chucksBaseNum; n++) {
-            this.sendChuckNum(n) // removed await
+            await this.sendChuckNum(n)
         }
     }
 

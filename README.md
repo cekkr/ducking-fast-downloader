@@ -23,3 +23,9 @@ $ ducking myserver.com myfile.zip
 ```
 
 This is an experimental file transfer protocol based on UDP connection. No one will use it, but it exists.
+
+## How to update it
+
+```
+$ npm update ducking-fast-downloader
+```
