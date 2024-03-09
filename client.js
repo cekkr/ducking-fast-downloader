@@ -271,12 +271,14 @@ export class Client {
     }
 
     send(msg) {
+        let origMsg = msg
         msg = DataStructure.writeSchema(DataStructure.SCHEMA, { session: this.sessionNum, data: msg })
 
         this.client.send(msg, PORT, this.address, (error) => {
             if (error) {
                 console.error('Error sending request:', error);
-                this.client.close();
+                //this.client.close();
+                this.send(origMsg)
             } else {
                 //console.log(`Requested file: ${fileName}`);
             }
@@ -290,15 +292,46 @@ export class Client {
         })
     }
 
-    requestFile(file, chuckOffset = 0) {
+    getFileInfo(path) {
+        return new Promise((res) => {
+            fs.stat(path, (err, stats) => {
+                if (err) {
+                    if (err.code === 'ENOENT') {
+                        console.log('File does not exist.');
+                    } else {
+                        console.error('An error occurred:', err);
+                    }
+
+                    res(null)
+                } else {
+                    console.log(`File exists. Size: ${stats.size} bytes`);
+                    res(stats)
+                }
+            });
+        })
+    }
+
+    async requestFile(file, chuckOffset = 0) {
+        ////
+        ////
+
+        let filePath = process.cwd() + '/' + path.basename(file)
+        let info = await this.getFileInfo(filePath)
+
+        if (info) {
+            let size = info.size
+            chuckOffset = Math.floor(size / Settings.CHUNK_SIZE)
+            console.log("chuckOffset: ", chuckOffset)
+        }
+
+        ///
         let data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST_FILE, { chuckOffset, path: file })
         data = DataStructure.writeSchema(DataStructure.SCHEMA_REQUEST, { type: DataStructure.REQUEST_TYPE.REQUEST_FILE, data })
         this.send(data)
 
-        ////
-        ////
+        ///
 
-        this.writeStream = fs.createWriteStream(process.cwd() + '/' + path.basename(file), {
+        this.writeStream = fs.createWriteStream(filePath, {
             flags: 'w+', // Open file for reading and writing. The file is created if not existing.
             start: (chuckOffset * Settings.CHUNK_SIZE),
         });
